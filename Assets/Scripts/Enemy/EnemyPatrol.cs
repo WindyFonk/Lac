@@ -28,6 +28,7 @@ public class EnemyPatrol : MonoBehaviour
     Vector3 playerPos;
 
     float count = 5;
+    float catchCount = 3;
     void Start()
     {
         checkPosition = transform.position;
@@ -39,7 +40,7 @@ public class EnemyPatrol : MonoBehaviour
     void Update()
     {
         DetectMeter();
-
+        CatchPlayer();
 
         switch (state)
         {
@@ -174,7 +175,6 @@ public class EnemyPatrol : MonoBehaviour
             count = 0;
             Debug.Log("Go search state");
         }
-        Debug.Log(count);
 
     }
 
@@ -201,5 +201,20 @@ public class EnemyPatrol : MonoBehaviour
 
     private void GoRandom()
     {
+
+    }
+
+
+    private void CatchPlayer()
+    {
+        float distance = Vector3.Distance(transform.position, playerPos);
+
+        if (distance > 3 && state<2) catchCount = 3;
+
+        catchCount -=Time.deltaTime;
+        if (catchCount < 0)
+        {
+            Debug.Log("Player Catched");
+        }
     }
 }
