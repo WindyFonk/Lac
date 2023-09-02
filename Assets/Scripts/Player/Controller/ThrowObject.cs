@@ -14,9 +14,11 @@ public class ThrowObject : MonoBehaviour
 
 
     [SerializeField] LayerMask groundMask;
+    [SerializeField] LayerMask limitMask;
+    [SerializeField] float throwDistance = 50f;
     [SerializeField] GameObject cursor;
     // Start is called before the first frame update
-    private GameObject _object,holdingObject;
+    private GameObject _object, holdingObject;
     private bool isHolding;
     public bool isAiming;
     Vector3 throwDirection;
@@ -28,7 +30,8 @@ public class ThrowObject : MonoBehaviour
 
     void Start()
     {
-        animator= GetComponent<Animator>();
+        animator = GetComponent<Animator>();
+        Cursor.visible = false;
     }
 
     // Update is called once per frame
@@ -72,21 +75,35 @@ public class ThrowObject : MonoBehaviour
     private void showUIThrow()
     {
         cursor.SetActive(isAiming);
-
+        RaycastHit limitHit;
         if (!isAiming) return;
 
         Ray camRay = _camera.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(camRay, out hit, 100f, groundMask))
+
+        if (Physics.Raycast(camRay, out limitHit, throwDistance, limitMask))
+        {
+            Physics.Raycast(limitHit.point, Vector3.down, out hit, groundMask);
+            cursor.transform.position = hit.point + Vector3.up * 0.1f;
+
+            throwDirection = CalculateVelocity(hit.point, handRootTransform.position, 1f);
+            return;
+        }
+
+
+        if (Physics.Raycast(camRay, out hit, throwDistance, groundMask))
         {
             cursor.transform.position = hit.point + Vector3.up * 0.1f;
 
             throwDirection = CalculateVelocity(hit.point, handRootTransform.position, 1f);
         }
+
+        
+
     }
 
     private void grabAndThrowObject()
     {
-        if (Input.GetKeyDown(KeyCode.E) && _object && !isHolding) 
+        if (Input.GetKeyDown(KeyCode.E) && _object && !isHolding)
         {
             animator.SetTrigger("PickUp");
             objectSound = _object.GetComponent<MakeSound>();
@@ -129,7 +146,7 @@ public class ThrowObject : MonoBehaviour
     private void dropObject()
     {
         holdingObject.GetComponent<Collider>().enabled = true;
-        holdingObject.transform.SetParent(null); 
+        holdingObject.transform.SetParent(null);
         holdingObject.GetComponent<Rigidbody>().isKinematic = false;
         isHolding = false;
         holdingObject = null;
@@ -150,7 +167,8 @@ public class ThrowObject : MonoBehaviour
         objectSound = null;
     }
 
-    private Vector3 CalculateVelocity (Vector3 target, Vector3 origin, float time) { 
+    private Vector3 CalculateVelocity(Vector3 target, Vector3 origin, float time)
+    {
         Vector3 distance = target - origin;
         Vector3 distanceXZ = distance;
         distanceXZ.y = 0;
@@ -160,7 +178,7 @@ public class ThrowObject : MonoBehaviour
         float Sxz = distanceXZ.magnitude;
 
         float Vxz = Sxz / time;
-        float Vy = Sy / time + 0.5f*Mathf.Abs(Physics.gravity.y)*time;
+        float Vy = Sy / time + 0.5f * Mathf.Abs(Physics.gravity.y) * time;
 
         Vector3 result = distanceXZ.normalized;
         result *= Vxz;

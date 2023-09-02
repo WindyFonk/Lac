@@ -8,6 +8,13 @@ public class EnviromentScan : MonoBehaviour
     [SerializeField] float distance = 0.8f;
     [SerializeField] float heightLenght = 5f;
     [SerializeField] LayerMask obstacleLayer;
+
+
+    private void Update()
+    {
+        Debug.Log(ObstacleCheck());
+    }
+
     public ObstacleHitData ObstacleCheck()
     {
         var hitData = new ObstacleHitData();
@@ -26,6 +33,7 @@ public class EnviromentScan : MonoBehaviour
         }
         return hitData;
     }
+
 }
 
 public struct ObstacleHitData

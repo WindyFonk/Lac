@@ -55,6 +55,7 @@ public class MakeSound : MonoBehaviour
                         Debug.Log(enemy.name);                      
                     }
                     enemy.GetComponent<EnemyPatrol>().state = 1;
+                    enemy.GetComponent<EnemyPatrol>().reactTime = 3;
                     enemy.GetComponent<EnemyPatrol>().checkPosition = soundPos;
                 }
             }

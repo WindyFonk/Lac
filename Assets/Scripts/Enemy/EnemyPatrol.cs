@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.UI;
@@ -22,6 +23,7 @@ public class EnemyPatrol : MonoBehaviour
     public int state = 0;
 
     private bool returning = true;
+    private bool arrived;
 
     public float detection;
     EnemyFOV enemyFOV;
@@ -29,11 +31,16 @@ public class EnemyPatrol : MonoBehaviour
 
     float count = 5;
     float catchCount = 3;
+    public float waitCount = 1;
+    public float reactTime = 0;
+
+    private EnemyAnimation enemyAnimation;
     void Start()
     {
         checkPosition = transform.position;
         agent = GetComponent<NavMeshAgent>();
         enemyFOV = GetComponent<EnemyFOV>();
+        enemyAnimation = GetComponent<EnemyAnimation>();
     }
 
     // Update is called once per frame
@@ -41,7 +48,7 @@ public class EnemyPatrol : MonoBehaviour
     {
         DetectMeter();
         CatchPlayer();
-
+        Debug.Log(reactTime);
         switch (state)
         {
             case 0:
@@ -85,22 +92,50 @@ public class EnemyPatrol : MonoBehaviour
         detectionMeter.value = detection;
     }
 
+    private bool checkDestination()
+    {
+        if (Vector3.Distance(transform.position, targetDestination) < 2.5f)
+        {
+            return true;
+        }
+        return false;
+    }
+
     //Patrol State
     private void PatrolState()
     {
-        if (returning)
+        /*if (returning)
         {
             returning = false;
             UpdateDestination();
-            StartCoroutine(goToDestination(0));
+            goToDestination(10);
         }
 
         if (Vector3.Distance(transform.position, targetDestination) < 1.5f)
         {
             waypointCircle();
             UpdateDestination();
-            StartCoroutine(goToDestination(timeBetweenMove));
+            goToDestination(10);
             returning = false;
+        }*/
+
+        if (!checkDestination())
+        {
+            UpdateDestination();
+            goToDestination();
+            waitCount = 10;
+
+        }
+        else
+        {
+            waitCount -= Time.deltaTime;
+        }
+
+        if (waitCount < 0)
+        {
+            waypointCircle();
+            UpdateDestination();
+            goToDestination();
         }
     }
 
@@ -110,9 +145,8 @@ public class EnemyPatrol : MonoBehaviour
         agent.isStopped = false;
         targetDestination = wayPoints[waypointIndex].position;
     }
-    private IEnumerator goToDestination(float time)
+    private void goToDestination()
     {
-        yield return new WaitForSeconds(time);
         agent.SetDestination(targetDestination);
     }
     private void waypointCircle()
@@ -129,23 +163,42 @@ public class EnemyPatrol : MonoBehaviour
     private void CheckingState()
     {
         agent.isStopped = true;
-
-        StartCoroutine(CheckLocation());
+        CheckLocation();
     }
 
-    private IEnumerator CheckLocation()
+    private void RotateToPoint(Vector3 point)
     {
-        yield return new WaitForSeconds(3f);
-        agent.ResetPath();
-        agent.SetDestination(checkPosition);
-        if (Vector3.Distance(transform.position, checkPosition) < 4)
+        var targetRotation = Quaternion.LookRotation(point - transform.position);
+
+        // Smoothly rotate towards the target point.
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 5f * Time.deltaTime);
+    }
+    private void CheckLocation()
+    {
+        reactTime -= Time.deltaTime;
+        RotateToPoint(checkPosition);
+        if (reactTime < 0)
+        {
+            targetDestination = checkPosition;
+            agent.ResetPath();
+            agent.SetDestination(targetDestination);
+        }
+
+        if (!checkDestination() && reactTime<0)
+        {
+            reactTime = 5;
+        }
+
+        if (checkDestination())
         {
             agent.isStopped = true;
-            yield return new WaitForSeconds(5f);
-            state = 0;
-            UpdateDestination();
-            StartCoroutine(goToDestination(0));
-
+            reactTime -= Time.deltaTime;
+            if (reactTime < 0 )
+            {
+                state = 0;
+                UpdateDestination();
+                goToDestination();
+            }
         }
     }
 
@@ -157,7 +210,7 @@ public class EnemyPatrol : MonoBehaviour
 
     private void ChasePlayer()
     {
-        
+
         if (enemyFOV.seePlayer)
         {
             playerPos = GameObject.FindGameObjectWithTag("Player").transform.position;
@@ -165,7 +218,7 @@ public class EnemyPatrol : MonoBehaviour
             count = 5;
         }
 
-        else if (!enemyFOV.seePlayer) 
+        else if (!enemyFOV.seePlayer)
         {
             count -= Time.deltaTime;
         }
@@ -209,12 +262,12 @@ public class EnemyPatrol : MonoBehaviour
     {
         float distance = Vector3.Distance(transform.position, playerPos);
 
-        if (distance > 3 && state<2) catchCount = 3;
+        if (distance > 5 || state < 2) catchCount = 3;
 
-        catchCount -=Time.deltaTime;
+        catchCount -= Time.deltaTime;
+
         if (catchCount < 0)
         {
-            Debug.Log("Player Catched");
         }
     }
 }

@@ -18,10 +18,10 @@ TagManager:
   - ThrowObject
   - Ground
   - Enemy
-  - 
+  - LimitThrow
   - Walkthrough
-  - 
-  - 
+  - VaultLayer
+  - DeadBody
   - 
   - 
   - 
