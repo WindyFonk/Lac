@@ -30,17 +30,22 @@ public class EnemyPatrol : MonoBehaviour
     Vector3 playerPos;
 
     float count = 5;
-    float catchCount = 3;
+    public float catchCount = 3;
     public float waitCount = 1;
-    public float reactTime = 0;
+    public float reactTime = 3;
+    public float returnTime = 5;
+
+
 
     private EnemyAnimation enemyAnimation;
+    private GameManager gameManager;
     void Start()
     {
         checkPosition = transform.position;
         agent = GetComponent<NavMeshAgent>();
         enemyFOV = GetComponent<EnemyFOV>();
         enemyAnimation = GetComponent<EnemyAnimation>();
+        gameManager = GameObject.FindGameObjectWithTag("GameManager").GetComponent<GameManager>();
     }
 
     // Update is called once per frame
@@ -48,7 +53,6 @@ public class EnemyPatrol : MonoBehaviour
     {
         DetectMeter();
         CatchPlayer();
-        Debug.Log(reactTime);
         switch (state)
         {
             case 0:
@@ -179,26 +183,23 @@ public class EnemyPatrol : MonoBehaviour
         RotateToPoint(checkPosition);
         if (reactTime < 0)
         {
+            agent.isStopped = false;
             targetDestination = checkPosition;
-            agent.ResetPath();
             agent.SetDestination(targetDestination);
-        }
-
-        if (!checkDestination() && reactTime<0)
-        {
-            reactTime = 5;
         }
 
         if (checkDestination())
         {
-            agent.isStopped = true;
-            reactTime -= Time.deltaTime;
-            if (reactTime < 0 )
-            {
-                state = 0;
-                UpdateDestination();
-                goToDestination();
-            }
+            returnTime -= Time.deltaTime;   
+        }
+
+        if (returnTime < 0)
+        {
+            state = 0;
+            UpdateDestination();
+            goToDestination();
+            returnTime = 5;
+            reactTime = 3;
         }
     }
 
@@ -215,6 +216,7 @@ public class EnemyPatrol : MonoBehaviour
         {
             playerPos = GameObject.FindGameObjectWithTag("Player").transform.position;
             agent.SetDestination(playerPos);
+            agent.speed = 3;
             count = 5;
         }
 
@@ -226,7 +228,8 @@ public class EnemyPatrol : MonoBehaviour
         if (count < 0)
         {
             count = 0;
-            Debug.Log("Go search state");
+            state = 0;
+            agent.speed = 2;
         }
 
     }
@@ -268,6 +271,8 @@ public class EnemyPatrol : MonoBehaviour
 
         if (catchCount < 0)
         {
+            Debug.Log("PlayerCatched");
+            gameManager.lose = true;
         }
     }
 }

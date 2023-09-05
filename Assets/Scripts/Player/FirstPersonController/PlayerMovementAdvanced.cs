@@ -66,10 +66,10 @@ public class PlayerMovementAdvanced : MonoBehaviour
         air
     }
 
+    public GameManager manager;
+
     private void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
 
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
@@ -261,5 +261,18 @@ public class PlayerMovementAdvanced : MonoBehaviour
         _camera.localRotation = Quaternion.Euler(_xRotation, 0, 0);
 
         rb.MoveRotation(rb.rotation * Quaternion.Euler(0, Mouse_X * mouseSensitive * Time.smoothDeltaTime, 0));
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Win"))
+        {
+            manager.win = true;
+        }
+        
+        if (other.CompareTag("Water"))
+        {
+            manager.lose = true;
+        }
     }
 }

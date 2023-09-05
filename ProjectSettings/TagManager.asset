@@ -6,6 +6,10 @@ TagManager:
   tags:
   - CinemachineTarget
   - Ground
+  - Thunder
+  - Water
+  - GameManager
+  - Win
   layers:
   - Default
   - TransparentFX
